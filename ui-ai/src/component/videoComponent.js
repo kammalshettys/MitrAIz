@@ -7,25 +7,93 @@ import Divider from '@mui/joy/Divider';
 import Typography from '@mui/joy/Typography';
 import IconButton from '@mui/joy/IconButton';
 import Link from '@mui/joy/Link';
-import Favorite from '@mui/icons-material/Mic';
+import MicIcon from '@mui/icons-material/Mic';
+import SendIcon from '@mui/icons-material/Send';
+import axios from 'axios';
 
-const VideoComponent = () =>{
+const VideoComponent = (props) =>{
+    const [videoSrc,setVideoSrc] = React.useState(null);
+    const videoRef = React.useRef(null); 
+        
+
+    React.useEffect(()=>{
+    videoRef.element = document.getElementById('video');
+      setVideoSrc("firstTime.mp4")
+      videoRef.element.src = "firstTime.mp4";
+//      videoRef.element.load();
+    },[])
+    React.useEffect(()=>{
+      videoRef.element.load();
+    },[videoSrc])
+
+   const sendVideoResponse = async()=>{
+    const inputData = props.getSpeech();
+    console.log(inputData);
+    await sendToServerHandler(inputData);
+   }
+
+   const sendToServerHandler = async(inputData) =>{
+    const params = {
+        question:inputData,
+        promptType:'chatGPT'
+    }
+        const url  = "http://127.0.0.1:8000/aiResponse/chatgpt/prompt"
+        console.log(params);
+        const res = await axios.post(url,params);
+        console.log(res.data.reply.output.output_video);
+        await lipSync(res.data.reply.output.output_video);
+        
+
+        
+  }
+
+
+  let lipSync = async(data)=>{
+   // const videoBlob = new Blob([data], { type: 'video/mp4' });
+
+    //const videoUrl = URL.createObjectURL(data);
+    videoRef.element.src = data
+    setVideoSrc(data);
+    videoRef.element.load();
+  } 
+
+
     return(
+      <>
+      {/* <video width="320" height="240" autoPlay controls>
+                    <source src={videoSrc} type="video/mp4"></source>
+      </video> */}
         <Card variant="outlined" sx={{ width: 1000}}>
         <CardOverflow>
           <AspectRatio ratio="2">
-            <img
-              src="https://images.unsplash.com/photo-1532614338840-ab30cf10ed36?auto=format&fit=crop&w=318"
-              srcSet="https://images.unsplash.com/photo-1532614338840-ab30cf10ed36?auto=format&fit=crop&w=318&dpr=2 2x"
-              loading="lazy"
-              alt=""
-            />
+
+          <video id="video" autoPlay>
+            <source src={videoSrc} type="video/mp4"/>
+          </video>
           </AspectRatio>
           <IconButton
             aria-label="Like minimal photography"
             size="md"
             variant="solid"
             color="danger"
+            onClick={()=>props.click}
+            sx={{
+              position: 'absolute',
+              zIndex: 2,
+              borderRadius: '50%',
+              right: '4rem',
+              bottom: 0,
+              transform: 'translateY(50%)',
+            }}
+          >
+            <MicIcon onClick={props.click} />
+          </IconButton>
+          <IconButton
+            aria-label="Like minimal photography"
+            size="md"
+            variant="solid"
+            color="primary"
+            onClick={()=>props.sendResponse}
             sx={{
               position: 'absolute',
               zIndex: 2,
@@ -35,38 +103,16 @@ const VideoComponent = () =>{
               transform: 'translateY(50%)',
             }}
           >
-            <Favorite />
+            <SendIcon onClick={sendVideoResponse} />
           </IconButton>
         </CardOverflow>
         <CardContent>
           <Typography level="h2" fontSize="md">
-            <Link href="#multiple-actions" overlay underline="none">
-              Yosemite National Park
-            </Link>
-          </Typography>
-          <Typography level="body2" sx={{ mt: 0.5 }}>
-            <Link href="#multiple-actions">California</Link>
+                {props.query}
           </Typography>
         </CardContent>
-        <CardOverflow variant="soft" sx={{ bgcolor: 'background.level1' }}>
-          <Divider inset="context" />
-          <CardContent orientation="horizontal">
-            <Typography
-              level="body3"
-              sx={{ fontWeight: 'md', color: 'text.secondary' }}
-            >
-              6.3k views
-            </Typography>
-            <Divider orientation="vertical" />
-            <Typography
-              level="body3"
-              sx={{ fontWeight: 'md', color: 'text.secondary' }}
-            >
-              1 hour ago
-            </Typography>
-          </CardContent>
-        </CardOverflow>
       </Card>
+      </> 
     );
 }
 
